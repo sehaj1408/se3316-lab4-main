@@ -29,6 +29,7 @@ const db = getDatabase();
 
 const dbRef = ref(getDatabase());
 
+// add review to selected playlist
 app.post('/api/secure/list/review', (req, res) => {
     const rating = req.body.rating;
     const comment = req.body.comment;
@@ -36,12 +37,16 @@ app.post('/api/secure/list/review', (req, res) => {
 
     const setRef = ref(db, 'lists/' + listName + '/review/');
 
-    set(setRef, {
+    const list = {
         rating: rating,
         comment: comment
-    });
+    }
+    set(setRef, list);
+
+    res.send(list);
 })
 
+// create new list using post
 app.post('/api/secure/list', (req, res) => {
     const reqName = req.body.name;
     const reqDescription = req.body.description;
@@ -106,6 +111,7 @@ app.post('/api/secure/list', (req, res) => {
     })
 }); 
 
+// get all playlists
 app.get('/api/secure/allLists', (req, res) => {
     get(child(dbRef, 'lists/')).then((snapshot) => {
         let listArr = [];
@@ -118,6 +124,37 @@ app.get('/api/secure/allLists', (req, res) => {
     })
 })
 
+// edit selected playlist
+app.put('/api/secure/edit', (req, res) => {
+    const currentName = req.body.replaceName;
+    const name = req.body.name;
+    const description = req.body.description;
+    const tracks = req.body.tracks;
+    const flag = req.body.flag;
+
+    get(child(dbRef, 'lists/')).then((snapshot) => {
+        if (snapshot.exists()) {
+            const setRef = ref(db, 'lists/' + currentName);
+            const newRef = ref(db, 'lists/' + name);
+            snapshot.forEach(child => {
+                if (currentName == child.key) {
+                    set(setRef, {});
+                    const list = {
+                        name: name, 
+                        description: description,
+                        tracks: tracks,
+                        flag: flag
+                    };
+                    set(newRef, list);
+
+                    res.send(list);
+                }
+            })
+        }
+    })
+})
+
+// delete selected playlist
 app.delete('/api/secure/delete/:name', (req, res) => {
     const name = req.params.name;
 
