@@ -60,6 +60,7 @@ function createList() {
         if (res.ok) {
             res.json()
             .catch(err => console.log('Failed to get json object'))
+            showLists();
         }
         else {
             alert(res.statusText);
@@ -88,17 +89,6 @@ function showLists() {
         data.forEach(list => {
             const item = document.createElement('li');
 
-            const editBtn = document.createElement('button');
-            editBtn.textContent = 'Edit';
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Delete';
-
-            const reviewBtn = document.createElement('button');
-            reviewBtn.textContent = 'Add review';
-
-            const editDiv = document.createElement('div');
-
             item.appendChild(document.createTextNode(`
             Name: ${list['name']},
             Flag: ${list['flag']}
@@ -106,6 +96,16 @@ function showLists() {
 
             mainList.appendChild(item);
 
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Delete';
+
+            const editBtn = document.createElement('button');
+            editBtn.textContent = 'Edit';
+
+            const reviewBtn = document.createElement('button');
+            reviewBtn.textContent = 'Add review';
+
+            const editDiv = document.createElement('div');
             editDiv.appendChild(editBtn);
             editDiv.appendChild(deleteBtn);
 
@@ -116,6 +116,7 @@ function showLists() {
             mainList.appendChild(editDiv);
 
             const childItem = document.createElement('h5');
+            const childItem2 = document.createElement('h5');
 
             if (item.childElementCount > 0) {
                 let first = item.firstElementChild;
@@ -130,7 +131,93 @@ function showLists() {
                 Tracks: ${list['tracks']}
             `))
 
+            if (list['review'] !== undefined) {
+                childItem2.appendChild(document.createTextNode(`
+                    Rating: ${list['review']['rating']}/10,
+                    Comment: ${list['review']['comment']}
+                `));
+            }
+
             item.appendChild(childItem);
+            item.appendChild(childItem2);
+
+            childItem.style.display = 'none';
+            childItem2.style.display = 'none';
+
+            item.addEventListener('click', showChildItems);
+            
+            function showChildItems() {
+                childItem.style.display = 'block';
+                childItem2.style.display = 'block';
+            }
+
+            editBtn.addEventListener('click', function(){
+                let nameInput = document.createElement('input');
+                nameInput.placeholder = 'Enter new name';
+                nameInput.id = 'get-new-name';
+
+                let descriptionInput = document.createElement('input');
+                descriptionInput.placeholder = 'Enter new description';
+                descriptionInput.id = 'get-new-description';
+
+                let tracksInput = document.createElement('input');
+                tracksInput.placeholder = 'Enter new tracks';
+                tracksInput.id = 'get-new-tracks';
+
+                let flagInput = document.createElement('input');
+                flagInput.placeholder = 'Enter new flag';         
+                flagInput.id = 'get-new-flag';
+
+                const saveBtn = document.createElement('button');
+                saveBtn.textContent = 'Save';
+
+                const placeDiv = document.createElement('div');
+                placeDiv.appendChild(nameInput);
+                placeDiv.appendChild(descriptionInput);
+                placeDiv.appendChild(tracksInput);
+                placeDiv.appendChild(flagInput);
+                placeDiv.appendChild(saveBtn);
+
+                editDiv.insertBefore(placeDiv, editBtn);
+                editBtn.style.display = 'none';
+                deleteBtn.style.display = 'none';
+                reviewBtn.style.display = 'none';
+
+                saveBtn.addEventListener('click', function(){
+                    let getName = document.getElementById('get-new-name').value.toLowerCase();
+                    let getDescription = document.getElementById('get-new-description').value.toLowerCase();
+                    let getTracks = document.getElementById('get-new-tracks').value.toLowerCase();
+                    let getFlag = document.getElementById('get-new-flag').value.toLowerCase();
+
+                    const newArr = validatenewListInput(getName, getTracks, getFlag, getDescription);
+
+                    if (newArr == false) {}
+                    else {
+                        fetch('api/secure/edit', {
+                            method: 'PUT',
+                            headers: {'Content-type': 'application/json'},
+                            body: JSON.stringify({
+                                replaceName: `${list['name']}`,
+                                name: newArr[0],
+                                description: newArr[3],
+                                tracks: newArr[1],
+                                flag: newArr[2]
+                            })
+                        })
+                        .then(res => {
+                            if (res.ok) {
+                                res.json()
+                                .catch(err => console.log('Failed to get json object'))
+                                showLists();
+                            }
+                            else {
+                                alert(res.statusText);
+                            }
+                        })
+                        .catch()
+                    }
+                })
+            })
 
             deleteBtn.addEventListener('click', function(){
                 let confirmDelete = confirm('Are you sure you wish to delete this playlist?');
@@ -165,6 +252,7 @@ function showLists() {
                 reviewDiv.appendChild(ratingInput);
                 reviewDiv.appendChild(commentInput);
                 reviewDiv.appendChild(okBtn);
+                reviewDiv.appendChild(cancelBtn);
 
                 reviewBtn.style.visibility = 'hidden';
 
@@ -200,6 +288,8 @@ function showLists() {
                         if (res.ok) {
                             res.json()
                             .catch(err => console.log('Failed to get json object'))
+                            
+                            showLists();
                         }
                         else {
                             alert(res.statusText);
@@ -209,14 +299,8 @@ function showLists() {
                 })
 
                 cancelBtn.addEventListener('click', function(){
-
+                    showLists();
                 })
-            })
-
-            childItem.style.display = 'none';
-
-            item.addEventListener('click', function(){
-                childItem.style.display = 'block';
             })
         })
     })
