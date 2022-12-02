@@ -109,8 +109,9 @@ function showLists() {
             editDiv.appendChild(editBtn);
             editDiv.appendChild(deleteBtn);
 
-            // create api to get flag then determine if add or not
-            editDiv.appendChild(reviewBtn);
+            if (list['flag'] == 'public') {
+                editDiv.appendChild(reviewBtn);
+            }
 
             mainList.appendChild(editDiv);
 
