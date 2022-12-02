@@ -1,0 +1,29 @@
+{
+  "type": "module",
+  "name": "se3316-lab4-main",
+  "version": "1.0.0",
+  "description": "",
+  "main": "task4.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sehaj1408/se3316-lab4-main.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sehaj1408/se3316-lab4-main/issues"
+  },
+  "homepage": "https://github.com/sehaj1408/se3316-lab4-main#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "csv-parser": "^3.0.0",
+    "express": "^4.18.2",
+    "firebase": "^9.14.0",
+    "nanoid": "^4.0.0",
+    "nodemon": "^2.0.20"
+  }
+}
