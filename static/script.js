@@ -42,40 +42,42 @@ function createList() {
 
     const bodyArr = validatenewListInput(name, track, flag, description);
 
-    fetch(`/api/tracks/${bodyArr[1]}`)
-    .then(res => {
-        if (res.ok) {
-            res.json()
-            .catch(err => console.log('Failed to get json object'))
-
-            fetch('/api/secure/list', {
-                method: 'POST',
-                headers: {'Content-type': 'application/json'},
-                body: JSON.stringify({
-                    name: bodyArr[0],
-                    description: bodyArr[3],
-                    tracks: bodyArr[1],
-                    flag: bodyArr[2]
+    if (bodyArr) {
+        fetch(`/api/tracks/${bodyArr[1]}`)
+        .then(res => {
+            if (res.ok) {
+                res.json()
+                .catch(err => console.log('Failed to get json object'))
+    
+                fetch('/api/secure/list', {
+                    method: 'POST',
+                    headers: {'Content-type': 'application/json'},
+                    body: JSON.stringify({
+                        name: bodyArr[0],
+                        description: bodyArr[3],
+                        tracks: bodyArr[1],
+                        flag: bodyArr[2]
+                    })
                 })
-            })
-            .then(res => {
-                if (res.ok) {
-                    res.json()
-                    .catch(err => console.log('Failed to get json object'))
-                    showLists();
-                }
-                else {
-                    alert(res.statusText);
-                }
-            })
-            .catch()
-        }
-        else {
-            alert(res.statusText);
-            return false;
-        }
-    })
-    .catch()
+                .then(res => {
+                    if (res.ok) {
+                        res.json()
+                        .catch(err => console.log('Failed to get json object'))
+                        showLists();
+                    }
+                    else {
+                        alert(res.statusText);
+                    }
+                })
+                .catch()
+            }
+            else {
+                alert(res.statusText);
+                return false;
+            }
+        })
+        .catch()
+    }
 }
 
 const showListsBtn = document.getElementById('show-lists');
@@ -232,20 +234,18 @@ function showLists() {
 
                         if (newTrack == null || newTrack == '') {}
                         else {
-
-
-                            // fetch(`/api/tracks/${newTrack}`)
-                            //     .then(res => {
-                            //         if (res.ok) {
-                            //             res.json()
-                            //             .catch(err => console.log('Failed to get json object'))
-                            //         }
-                            //         else {
-                            //             alert(res.statusText);
-                            //             return false;
-                            //         }
-                            //     })
-                            //     .catch()
+                            fetch(`/api/tracks/${newTrack}`)
+                                .then(res => {
+                                    if (res.ok) {
+                                        res.json()
+                                        .catch(err => console.log('Failed to get json object'))
+                                    }
+                                    else {
+                                        alert(res.statusText);
+                                        return false;
+                                    }
+                                })
+                                .catch()
                         }
 
                         if (flag == null || flag == '') {
