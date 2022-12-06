@@ -177,6 +177,78 @@ app.delete('/api/secure/delete/:name', (req, res) => {
     })
 })
 
+//login
+app.post('/api/login', (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    let errorExists = false;
+    let errorMessage = ' ';
+    
+    get(child(dbRef, 'users/')).then((snapshot) => {
+        if (snapshot.exists()) {
+            snapshot.forEach(child => {
+                if (username == child.val().username) {
+                    if (password == child.val().password) {
+                        res.send(child.val());
+                    }
+                    else {
+                        errorExists = true;
+                        errorMessage = 'Incorrect password';
+                    }
+                }
+            })
+        }
+        else {
+            errorExists = true;
+            errorMessage = 'User does not exist';
+        }
+
+        if (errorExists) {
+            res.statusMessage = errorMessage;
+            res.status(400).send();
+        }
+    })
+})
+
+//register
+app.post('/api/register', (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+    const email = req.body.email;
+    
+    let errorExists = false;
+    let errorMessage = ' ';
+
+    const setRef = ref(db, 'users/' + username);
+
+    const user = {
+        username: username,
+        password: password,
+        email: email
+    }
+
+    get(child(dbRef, 'users/')).then((snapshot) => {
+        if (snapshot.exists()) {
+            snapshot.forEach(child => {
+                if (username == child.val().username) {
+                    errorExists = true;
+                    errorMessage = 'Username already exists';
+                }
+            })
+        }
+
+        if (errorExists) {
+            res.statusMessage = errorMessage;
+            res.status(400).send();
+        }
+        else {
+            set(setRef, user);
+            res.send(user);
+        }
+    })
+})
+
 app.listen(port, () => {
     console.log(`Listening on port ${port}`);
 });
