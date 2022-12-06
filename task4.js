@@ -1,7 +1,7 @@
 import express from 'express';
 const app = express();
 const port = 3000;
-import fs, { copyFileSync } from 'fs';
+import fs from 'fs';
 import csv from 'csv-parser';
 
 import bodyParser from 'body-parser';
@@ -29,17 +29,42 @@ const db = getDatabase();
 
 const dbRef = ref(getDatabase());
 
+let raw_tracks_data = [];
+
+fs.createReadStream('lab4-data/raw_tracks.csv')
+    .pipe(csv())
+    .on('data', (rows) => {
+        raw_tracks_data.push(rows);
+    })
+        .on('end', () => {
+
+            app.get('/api/tracks/:id', (req, res) => {
+                const id = req.params.id;
+                const result = raw_tracks_data.find(t => t.track_id == parseInt(id));
+
+                if (result) {
+                    res.send(result);
+                }
+                else {
+                    res.statusMessage = 'The track with that id does not exist';
+                    res.status(400).send();
+                }
+            })
+        })
+
 // add review to selected playlist
 app.post('/api/secure/list/review', (req, res) => {
     const rating = req.body.rating;
     const comment = req.body.comment;
     const listName = req.body.name;
+    const creationDate = req.body.creationDate;
 
     const setRef = ref(db, 'lists/' + listName + '/review/');
 
     const list = {
         rating: rating,
-        comment: comment
+        comment: comment,
+        creationDate: creationDate
     }
     set(setRef, list);
 
@@ -129,7 +154,7 @@ app.put('/api/secure/edit', (req, res) => {
     const currentName = req.body.replaceName;
     const name = req.body.name;
     const description = req.body.description;
-    const tracks = req.body.tracks;
+    const track = req.body.track;
     const flag = req.body.flag;
 
     get(child(dbRef, 'lists/')).then((snapshot) => {
@@ -142,7 +167,7 @@ app.put('/api/secure/edit', (req, res) => {
                     const list = {
                         name: name, 
                         description: description,
-                        tracks: tracks,
+                        tracks: track,
                         flag: flag
                     };
                     set(newRef, list);
