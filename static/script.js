@@ -384,6 +384,61 @@ function showLists() {
                 cancelBtn.addEventListener('click', function(){
                     showLists();
                 })
+
+             
+                username = document.getElementById('username').value;
+                password = document.getElementById('password').value;
+                email = document.getElementById('email').value;
+                loginBtn = document.getElementById('login');
+                registerBtn = document.getElementById('register');
+                //add event listener to the login button
+                //when clicked, send a POST request to the server with the username and password
+                loginBtn.addEventListener('click', function(){
+                    fetch('/api/login', {
+                        method: 'POST',
+                        headers: {'Content-type': 'application/json'},
+                        body: JSON.stringify({
+                            email: email,
+                            username: username,
+                            password: password
+                        })
+                    })
+                    .then(res => {
+                        if (res.ok) {
+                            res.json()
+                            .catch(err => console.log('Failed to get json object'))
+                            window.location.reload();
+                        }
+                        else {
+                            alert(res.statusText);
+                        }
+                    })
+                    .catch()
+                })
+                registerBtn.addEventListener('click', function(){
+                    fetch('/api/register', {
+                        method: 'POST',
+                        headers: {'Content-type': 'application/json'},
+                        body: JSON.stringify({
+                            email: email,
+                            username: username,
+                            password: password
+                        })
+                    })
+                    .then(res => {
+                        if (res.ok) {
+                            res.json()
+                            .catch(err => console.log('Failed to get json object'))
+                            window.location.reload();
+                        }
+                        else {
+                            alert(res.statusText);
+                        }
+                    })
+                    .catch()
+                })
+
+
             })
         })
     })
