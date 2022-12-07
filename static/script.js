@@ -1,288 +1,250 @@
-const addListBtn = document.getElementById('create-list');
-addListBtn.addEventListener('click', createList);
-
-function validatenewListInput(name, track, flag, description) {
-    if (name == null || name == "") {
-        alert('Name is required');
-        return false;
-    }
-    else if (track == null || track == "") {
-        alert('Track is required');
-        return false;
-    }
-
-    if (flag == null || flag == '') {
-        flag = 'private';
-    }
-
-    if (description == null || description == '') {
-        description = '(no description)'
-    }
-
-    if ((flag == 'private') || (flag == 'public')) {
-       // fine 
-    }
-    else {
-        alert('Flag can only be "public" or "private"');
-        return false;
-    }
-
-    let arr = [name, track, flag, description];
-
-    return (arr);
+const authenticatedDiv = document.getElementById('authenticated-user-div');
+if (authenticatedDiv) {
+    authenticatedDiv.style.display = 'none';
 }
 
-// USE ANGULAR !!
+// create a div containing message to click link and the link itself, return array containing message and link
+function verifyEmail() {
+    const linkDiv = document.createElement('div');
 
-function createList() {
-    let name = document.getElementById('get-list-name').value.toLowerCase();
-    let description = document.getElementById('get-list-description').value.toLowerCase();
-    let track = document.getElementById('get-list-track').value;
-    let flag = document.getElementById('get-list-flag').value.toLowerCase();
+    const a = document.createElement('a'); 
+    const link = document.createTextNode('Verify email');
+    a.appendChild(link); 
+    a.title = 'Verify email'; 
 
-    const bodyArr = validatenewListInput(name, track, flag, description);
-
-    if (bodyArr) {
-        fetch(`/api/tracks/${bodyArr[1]}`)
-        .then(res => {
-            if (res.ok) {
-                res.json()
-                .catch(err => console.log('Failed to get json object'))
+    const linkText = document.createElement('h5');
+    linkText.style.marginLeft = '0px';
+    linkText.textContent = 'Click the link below to verify your email';
     
-                fetch('/api/secure/list', {
-                    method: 'POST',
-                    headers: {'Content-type': 'application/json'},
-                    body: JSON.stringify({
-                        name: bodyArr[0],
-                        description: bodyArr[3],
-                        tracks: bodyArr[1],
-                        flag: bodyArr[2]
-                    })
-                })
-                .then(res => {
-                    if (res.ok) {
-                        res.json()
-                        .catch(err => console.log('Failed to get json object'))
-                        showLists();
-                    }
-                    else {
-                        alert(res.statusText);
-                    }
-                })
-                .catch()
-            }
-            else {
-                alert(res.statusText);
-                return false;
-            }
-        })
-        .catch()
-    }
+    linkDiv.appendChild(linkText);
+    linkDiv.appendChild(a);
+
+    return [linkDiv, a];
 }
 
-const showListsBtn = document.getElementById('show-lists');
-showListsBtn.addEventListener('click', showLists);
+// open the clicked link in a new tab
+function openInNewTab(event) {
+    window.open('http://localhost:3000/verifyLogin.html', '_blank').focus();
 
-function showLists() {
-    const mainList = document.getElementById('lists');
+    // use currentTarget.<something> to directly get value for passed in event
+    event.currentTarget.outerDiv.removeChild(event.currentTarget.innerDiv);
 
-    if (mainList.childElementCount > 0) {
-        var first = mainList.firstElementChild;
-        while (first) {
-            first.remove();
-            first = mainList.lastElementChild;
+    fetch('/users/login/verify', {
+        method: 'POST',
+        headers: {'Content-type': 'application/json'},
+        body: JSON.stringify({
+            email: event.currentTarget.email,
+            password: document.getElementById('get-new-email').value,
+            emailVerified: 'y',
+            accountStatus: 'active'
+        })
+    })
+    .then(res => {
+        if (res.ok) {}
+
+        else {
+            alert(res.statusText);
+            return false;
+        }
+    })
+    window.location.reload();
+  }
+
+// email and password validation for null values
+function validateLoginDetails(email, password) {
+    if (email == '' || email == null) {
+        alert('Email is required');
+        return false;
+    }
+
+    if (password == '' || password == null){
+        alert('Password is required');
+        return false;
+    }
+    return true;
+}
+
+const showCreateBtn = document.getElementById('show-create-button');
+if (showCreateBtn) {
+    showCreateBtn.addEventListener('click', createAccount);
+}
+
+// show email and password input fields and add event listener for create account button
+function createAccount() {
+    const newAccountDiv = document.getElementById('create-account');
+
+    const emailLabel = document.createElement('label');
+    emailLabel.textContent = 'Email: ';
+    const emailInput = document.createElement('input');
+    emailInput.placeholder = 'Enter email';
+    emailInput.id = 'get-new-email';
+
+    const passwordLabel = document.createElement('label');
+    passwordLabel.textContent = 'Password: ';
+    const passwordInput = document.createElement('input');
+    passwordInput.placeholder = 'Enter password';
+    passwordInput.id = 'get-new-password';
+
+    emailInput.style.display = 'inline-block';
+    passwordInput.style.display = 'inline-block';
+    newAccountDiv.appendChild(emailLabel);
+    newAccountDiv.appendChild(emailInput);
+    newAccountDiv.appendChild(document.createElement('br'));
+    newAccountDiv.appendChild(passwordLabel);
+    newAccountDiv.appendChild(passwordInput);
+    newAccountDiv.appendChild(document.createElement('br'));
+
+    const createBtn = document.createElement('button');
+    createBtn.textContent = 'Create'
+
+    newAccountDiv.appendChild(createBtn);
+
+    createBtn.addEventListener('click', validateLogin);
+
+    // add values inside body to firebase database, set values to be referenced using event.currentTarget
+    function validateLogin() {
+        if (validateLoginDetails(emailInput.value, passwordInput.value)) {
+            fetch('/users',  {
+                method: 'POST',
+                headers: {'Content-type': 'application/json'},
+                body: JSON.stringify({
+                    email: emailInput.value,
+                    password: passwordInput.value,
+                    emailVerified: 'n',
+                    accountStatus: 'active'
+                })
+            })
+            .then(res => {
+                if (res.ok) {
+                    const linkArr = verifyEmail();
+                    newAccountDiv.appendChild(linkArr[0]);
+
+                    linkArr[1].addEventListener('click', openInNewTab, false);
+
+                    // this is used for event.currentTarget
+                    linkArr[1].outerDiv = newAccountDiv;
+                    linkArr[1].innerDiv = linkArr[0];
+                    linkArr[1].email = emailInput.value;
+                    linkArr[1].password = passwordInput.value;
+                }
+                else {
+                    alert(res.statusText);
+                    return false;
+                }
+            })
         }
     }
 
-    fetch('/api/secure/allLists')
-    .then(res => res.json())
-    .then(data => {
-        data.forEach(list => {
-            const item = document.createElement('li');
+}
 
-            item.appendChild(document.createTextNode(`
-            Name: ${list['name']},
-            Flag: ${list['flag']}
-            `));
+const loginBtn = document.getElementById('submit-user-login');
+loginBtn.addEventListener('click', checkLogin);
 
-            mainList.appendChild(item);
+// check all below conditions when user tries to log in
+function checkLogin() {
+    const email = document.getElementById('get-email').value;
+    const password = document.getElementById('get-password').value;
 
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Delete';
+    // check for null values
+    if (validateLoginDetails(email, password)) {
+        fetch('/users/login', {
+            method: 'POST',
+            headers: {'Content-type': 'application/json'},
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        })
+        .then(res => {
+            // if email is verified, account is not deactivated, password is correct, then run
+            if (res.ok) {
+                const message = document.createElement('h5');
+                message.textContent = 'Successfully logged in!';
 
-            const editBtn = document.createElement('button');
-            editBtn.textContent = 'Edit';
+                const list = document.getElementById('update-password-list');
+                const updateBtn = document.createElement('button');
+                updateBtn.textContent = 'Update password';
 
-            const reviewBtn = document.createElement('button');
-            reviewBtn.textContent = 'Add review';
+                const deactivateBtn = document.createElement('button');
+                deactivateBtn.textContent = 'Deactive account';
 
-            const editDiv = document.createElement('div');
-            editDiv.appendChild(editBtn);
-            editDiv.appendChild(deleteBtn);
+                const br = document.createElement('br');
 
-            if (list['flag'] == 'public') {
-                editDiv.appendChild(reviewBtn);
-            }
+                // show logged in message, update and deactivate buttons
+                list.appendChild(message);
+                list.appendChild(updateBtn);
+                list.appendChild(deactivateBtn);
 
-            mainList.appendChild(editDiv);
+                deactivateBtn.addEventListener('click', deactivateAccount);
 
-            const childItem = document.createElement('h5');
-            const childItem2 = document.createElement('h5');
-
-            if (item.childElementCount > 0) {
-                let first = item.firstElementChild;
-                while (first) {
-                    first.remove();
-                    first = item.lastElementChild;
+                // set accountStatus in firebase database to deactivated so user cannot log in
+                function deactivateAccount() {
+                    fetch('/users/login/deactivate', {
+                        method: 'POST',
+                        headers: {'Content-type': 'application/json'},
+                        body: JSON.stringify({
+                            email: email,
+                            password: password,
+                            emailVerified: 'y',
+                            accountStatus: 'deactivated'
+                        })
+                    })
+                    .then(res => {
+                        if (res.ok) {
+                            window.location.reload();
+                        }
+                        else {
+                            alert(res.statusText)
+                            return false;
+                        }
+                    })
+                    .catch()
                 }
-            }
 
-            childItem.appendChild(document.createTextNode(`
-                Description: ${list['description']},
-                Tracks: ${list['tracks']}
-            `))
+                updateBtn.addEventListener('click', updatePassword);
 
-            if (list['review'] !== undefined) {
-                childItem2.appendChild(document.createTextNode(`
-                    Rating: ${list['review']['rating']}/10,
-                    Comment: ${list['review']['comment']},
-                    Review created: ${list['review']['creationDate']}
-                `));
-            }
+                // enter new password and store hashed password in firebase database
+                function updatePassword() {
+                    const okBtn = document.createElement('button');
+                    okBtn.textContent = 'OK';
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.textContent = 'Cancel';
 
-            item.appendChild(childItem);
-            item.appendChild(childItem2);
+                    const passwordLabel = document.createElement('label');
+                    passwordLabel.textContent = 'Enter new password: '
+                    const passwordInput = document.createElement('input');
+                    passwordInput.placeholder = 'Enter password';
 
-            childItem.style.display = 'none';
-            childItem2.style.display = 'none';
-
-            item.addEventListener('click', showChildItems);
-            
-            function showChildItems() {
-                childItem.style.display = 'block';
-                childItem2.style.display = 'block';
-            }
-
-            editBtn.addEventListener('click', function(){
-                let nameInput = document.createElement('input');
-                nameInput.placeholder = 'Enter new name';
-                nameInput.id = 'get-new-name';
-
-                let descriptionInput = document.createElement('input');
-                descriptionInput.placeholder = 'Enter new description';
-                descriptionInput.id = 'get-new-description';
-
-                let addTracksInput = document.createElement('input');
-                addTracksInput.placeholder = 'Add tracks';
-                addTracksInput.id = 'get-new-tracks';
-                addTracksInput.type = 'number';
-
-                let removeTracksInput = document.createElement('input');
-                removeTracksInput.placeholder = 'Remove tracks';
-                removeTracksInput.id = 'get-removed-tracks';
-                removeTracksInput.type = 'number';
-
-                let flagInput = document.createElement('input');
-                flagInput.placeholder = 'Enter new flag';         
-                flagInput.id = 'get-new-flag';
-
-                const saveBtn = document.createElement('button');
-                saveBtn.textContent = 'Save';
-
-                const cancelBtn = document.createElement('button');
-                cancelBtn.textContent = 'Cancel';
-
-                const placeDiv = document.createElement('div');
-                placeDiv.appendChild(nameInput);
-                placeDiv.appendChild(descriptionInput);
-                placeDiv.appendChild(addTracksInput);
-                placeDiv.appendChild(removeTracksInput);
-                placeDiv.appendChild(flagInput);
-                placeDiv.appendChild(saveBtn);
-                placeDiv.appendChild(cancelBtn);
-
-                editDiv.insertBefore(placeDiv, editBtn);
-                editBtn.style.display = 'none';
-                deleteBtn.style.display = 'none';
-                reviewBtn.style.display = 'none';
-
-                cancelBtn.addEventListener('click', function(){
-                    showLists();
-                })
-
-                saveBtn.addEventListener('click', function(){
-                    let getName = document.getElementById('get-new-name').value.toLowerCase();
-                    let getDescription = document.getElementById('get-new-description').value.toLowerCase();
-                    let getTrack = document.getElementById('get-new-tracks').value;
-                    let getRemovedTrack = document.getElementById('get-removed-tracks').value;
-                    let getFlag = document.getElementById('get-new-flag').value.toLowerCase();
+                    const br = document.createElement('br');
                     
-                    function validateEditedList(name, description, newTrack, removedTrack, flag) {
-                        let tracks = `${list['tracks']}`;
-                        if ((name == null || name == '') && (description == null || description == '') && (newTrack == null || newTrack == '') && (removedTrack == null || removedTrack == '') && (flag == null || flag == '')) {
-                            alert('Enter at least one item to be changed or press cancel');
+                    // show message and button for new password
+                    list.appendChild(br);
+                    list.appendChild(passwordLabel);
+                    list.appendChild(passwordInput);
+                    list.appendChild(okBtn);
+                    list.appendChild(cancelBtn);
+
+                    okBtn.addEventListener('click', changePassword);
+                    cancelBtn.addEventListener('click', cancelPasswordUpdate);
+
+                    // if ok button is clicked, update new password in database
+                    function changePassword() {
+                        if (passwordInput.value == '' || passwordInput.value == null) {
+                            alert('Password is required');
                             return false;
                         }
 
-                        if (name == null || name == '') {
-                            name = `${list['name']}`;
-                        }
-
-                        if (description == null || description == '') {
-                            description = `${list['description']}`;
-                        }
-
-                        if (newTrack == null || newTrack == '') {}
-                        else {
-                            fetch(`/api/tracks/${newTrack}`)
-                                .then(res => {
-                                    if (res.ok) {
-                                        res.json()
-                                        .catch(err => console.log('Failed to get json object'))
-                                    }
-                                    else {
-                                        alert(res.statusText);
-                                        return false;
-                                    }
-                                })
-                                .catch()
-                        }
-
-                        if (flag == null || flag == '') {
-                            flag = 'private';
-                        }
-
-                        if ((flag == 'private') || (flag == 'public')) {}
-                         else {
-                             alert('Flag can only be "public" or "private"');
-                             return false;
-                        }
-
-                        let arr = [name, description, tracks, flag];
-
-                        return (arr);
-                    }
-                    
-                    const newArr = validateEditedList(getName, getDescription, getTrack, getRemovedTrack, getFlag);
-
-                    if (newArr == false) {}
-                    else {
-                        fetch('api/secure/edit', {
-                            method: 'PUT',
+                        fetch('/users/login/password/update', {
+                            method: 'POST',
                             headers: {'Content-type': 'application/json'},
                             body: JSON.stringify({
-                                replaceName: `${list['name']}`,
-                                name: newArr[0],
-                                description: newArr[1],
-                                track: newArr[2],
-                                flag: newArr[3]
+                                email: email,
+                                password: passwordInput.value
                             })
                         })
                         .then(res => {
                             if (res.ok) {
-                                res.json()
-                                .catch(err => console.log('Failed to get json object'))
-                                showLists();
+                                console.log(passwordInput.value);
                             }
                             else {
                                 alert(res.statusText);
@@ -290,156 +252,64 @@ function showLists() {
                         })
                         .catch()
                     }
-                })
-            })
 
-            deleteBtn.addEventListener('click', function(){
-                let confirmDelete = confirm('Are you sure you wish to delete this playlist?');
-                if (confirmDelete) {
-                    fetch(`api/secure/delete/${list['name']}`, {
-                        method: 'DELETE'
-                    })
-
-                    window.location.reload();
+                    // reload window if cancel button is clicked
+                    function cancelPasswordUpdate() {
+                        window.location.reload();
+                    }
                 }
-            })
+            }
 
-            reviewBtn.addEventListener('click', function(){
+            // any condiiton was not true then show error
+            else {
+                alert(res.statusText);
 
-                const ratingInput = document.createElement('input');
-                ratingInput.placeholder = 'Enter rating out of 10';
-                ratingInput.type = 'number';
-                ratingInput.id = 'ratingInput';
+                // only show verify link if email has not been verified
+                if (res.statusText == 'Please verify email and try again') {
+                    const outerLinkDiv = document.getElementById('login-div');
 
-                const commentInput = document.createElement('input');
-                commentInput.placeholder = 'Enter comment';
-                commentInput.id = 'commentInput';
+                    const linkArr = verifyEmail()
+                    outerLinkDiv.appendChild(linkArr[0]);
+                    linkArr[1].addEventListener('click', openInNewTab, false);
+                    
+                    linkArr[1].outerDiv = outerLinkDiv;
+                    linkArr[1].innerDiv = linkArr[0];
+                    linkArr[1].email = email;
+                    linkArr[1].password = password;
+                }
 
-                const okBtn = document.createElement('button');
-                okBtn.textContent = 'OK';
+                return false;
+            }
+        })
+        .catch()
+    }
+}
 
-                const cancelBtn = document.createElement('button');
-                cancelBtn.textContent = 'Cancel';
+const showUsersBtn = document.getElementById('show-users');
+showUsersBtn.addEventListener('click', showUsers);
 
-                const reviewDiv = document.createElement('div');
+// not included in final site, just to see the list of users
+function showUsers() {
+    fetch('/users')
+    .then(res => res.json())
+    .then(data => {
+        const list = document.getElementById('users-ordered-list');
 
-                reviewDiv.appendChild(ratingInput);
-                reviewDiv.appendChild(commentInput);
-                reviewDiv.appendChild(okBtn);
-                reviewDiv.appendChild(cancelBtn);
-
-                reviewBtn.style.display = 'none';
-                editBtn.style.display = 'none';
-                deleteBtn.style.display = 'none';
-
-                editDiv.appendChild(reviewDiv);
-
-                okBtn.addEventListener('click', function(){
-                    const getRating = document.getElementById('ratingInput').value.toLowerCase();
-                    const getComment = document.getElementById('commentInput').value.toLowerCase();
-
-                    if (getRating < 0 || getRating > 10) {
-                        alert('Please enter a rating between 1 and 10');
-                        return false;
-                    }
-                    if (getRating == null || getRating == '') {
-                        alert('Please enter a rating');
-                        return false;
-                    }
-                    else if (getComment == null || getComment == '') {
-                        alert('Please enter a comment');
-                        return false;
-                    }
-
-                    let today = new Date();
-                    let dd = String(today.getDate()).padStart(2, '0');
-                    let mm = String(today.getMonth() + 1).padStart(2, '0');
-                    let yyyy = today.getFullYear();
-                    today = mm + '/' + dd + '/' + yyyy;
-
-                    fetch('/api/secure/list/review', {
-                        method: 'POST',
-                        headers: {'Content-type': 'application/json'},
-                        body: JSON.stringify({
-                            rating: getRating,
-                            comment: getComment,
-                            name: `${list['name']}`,
-                            creationDate: today
-                        })
-                    })
-                    .then(res => {
-                        if (res.ok) {
-                            res.json()
-                            .catch(err => console.log('Failed to get json object'))
-                            
-                            showLists();
-                        }
-                        else {
-                            alert(res.statusText);
-                        }
-                    })
-                    .catch()
-                })
-
-                cancelBtn.addEventListener('click', function(){
-                    showLists();
-                })
-
-             
-                username = document.getElementById('username').value;
-                password = document.getElementById('password').value;
-                email = document.getElementById('email').value;
-                loginBtn = document.getElementById('login');
-                registerBtn = document.getElementById('register');
-                //add event listener to the login button
-                //when clicked, send a POST request to the server with the username and password
-                loginBtn.addEventListener('click', function(){
-                    fetch('/api/login', {
-                        method: 'POST',
-                        headers: {'Content-type': 'application/json'},
-                        body: JSON.stringify({
-                            email: email,
-                            username: username,
-                            password: password
-                        })
-                    })
-                    .then(res => {
-                        if (res.ok) {
-                            res.json()
-                            .catch(err => console.log('Failed to get json object'))
-                            window.location.reload();
-                        }
-                        else {
-                            alert(res.statusText);
-                        }
-                    })
-                    .catch()
-                })
-                registerBtn.addEventListener('click', function(){
-                    fetch('/api/register', {
-                        method: 'POST',
-                        headers: {'Content-type': 'application/json'},
-                        body: JSON.stringify({
-                            email: email,
-                            username: username,
-                            password: password
-                        })
-                    })
-                    .then(res => {
-                        if (res.ok) {
-                            res.json()
-                            .catch(err => console.log('Failed to get json object'))
-                            window.location.reload();
-                        }
-                        else {
-                            alert(res.statusText);
-                        }
-                    })
-                    .catch()
-                })
-
-
-            })
+        if (list.childElementCount > 0) {
+            let first = list.firstElementChild;
+            while (first) {
+                first.remove();
+                first = list.lastElementChild;
+            }
+        }
+        data.forEach(user => {
+            console.log(user);
+            const item = document.createElement('li');
+            item.appendChild(document.createTextNode(`
+                Email: ${user['email']},
+                Password: ${user['password']}
+            `))
+            list.appendChild(item);
         })
     })
 }

@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/sehaj1408/se3316-lab4-main#readme",
   "dependencies": {
+    "bcrypt": "^5.1.0",
     "cors": "^2.8.5",
     "csv-parser": "^3.0.0",
     "express": "^4.18.2",
