@@ -211,6 +211,100 @@ app.post('/users/login', async (req, res) => {
         }
     })
 })
+//ADMIN FUNCTIONS
+//Set a user as admin
+app.post('/users/admin', (req, res) => {
+    const email = req.body.email;
+    const admin = req.body.admin;
+    get(child(dbRef, 'users/' + email)).then((snapshot) => {
+        if (snapshot.exists()) {
+            const setRef = ref(db, 'users/' + email + '/admin');
+            set(setRef, admin);
+            res.send('Success');
+        }
+        else {
+            res.statusMessage = 'Error in /users/admin post call';
+            res.status(400).send();
+        }
+    })
+})
+//remove admin privileges from a user
+app.post('/users/admin/remove', (req, res) => {
+    const email = req.body.email;
+    get(child(dbRef, 'users/' + email)).then((snapshot) => {
+        if (snapshot.exists()) {
+            const setRef = ref(db, 'users/' + email + '/admin');
+            set(setRef, 'n');
+            res.send('Success');
+        }
+        else {
+            res.statusMessage = 'Error in /users/admin/remove post call';
+            res.status(400).send();
+        }
+    })
+})
+//set a review as hidden
+app.post('/reviews/hide', (req, res) => {
+    const reviewID = req.body.reviewID;
+    get(child(dbRef, 'reviews/' + reviewID)).then((snapshot) => {
+        if (snapshot.exists()) {
+            const setRef = ref(db, 'reviews/' + reviewID + '/hidden');
+            set(setRef, 'y');
+            res.send('Success');
+        }
+        else {
+            res.statusMessage = 'Error in /reviews/hide post call';
+            res.status(400).send();
+        }
+    })
+})
+//unhide a review
+app.post('/reviews/unhide', (req, res) => {
+    const reviewID = req.body.reviewID;
+    get(child(dbRef, 'reviews/' + reviewID)).then((snapshot) => {
+        if (snapshot.exists()) {
+            const setRef = ref(db, 'reviews/' + reviewID + '/hidden');
+            set(setRef, 'n');
+            res.send('Success');
+        }
+        else {
+            res.statusMessage = 'Error in /reviews/unhide post call';
+            res.status(400).send();
+        }
+    })
+})
+//ban a user
+app.post('/users/ban', (req, res) => {
+    const email = req.body.email;
+    get(child(dbRef, 'users/' + email)).then((snapshot) => {
+        if (snapshot.exists()) {
+            const setRef = ref(db, 'users/' + email + '/accountStatus');
+            set(setRef, 'banned');
+            res.send('Success');
+        }
+        else {
+            res.statusMessage = 'Error in /users/ban post call';
+            res.status(400).send();
+        }
+    })
+})
+//unban a user
+app.post('/users/unban', (req, res) => {
+    const email = req.body.email;
+    get(child(dbRef, 'users/' + email)).then((snapshot) => {
+        if (snapshot.exists()) {
+            const setRef = ref(db, 'users/' + email + '/accountStatus');
+            set(setRef, 'active');
+            res.send('Success');
+        }
+        else {
+            res.statusMessage = 'Error in /users/unban post call';
+            res.status(400).send();
+        }
+    })
+})
+
+
 app.listen(port, () => {
     console.log(`Listening on port ${port}`);
 });

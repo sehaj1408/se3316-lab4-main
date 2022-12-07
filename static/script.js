@@ -313,3 +313,259 @@ function showUsers() {
         })
     })
 }
+//ADMIN PRIVILEGES
+//special user with admin privileges
+const admin = {
+    email: 'admin',
+    password: 'admin'
+}
+//ability to grant admin privileges to other users
+const grantAdminBtn = document.getElementById('grant-admin');
+grantAdminBtn.addEventListener('click', grantAdmin);
+
+function grantAdmin() {
+    const email = document.getElementById('get-email').value;
+    const password = document.getElementById('get-password').value;
+
+    if (validateLoginDetails(email, password)) {
+        fetch('/users/login', {
+            method: 'POST',
+            headers: {'Content-type': 'application/json'},
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        })
+        .then(res => {
+            if (res.ok) {
+                fetch('/users/admin', {
+                    method: 'POST',
+                    headers: {'Content-type': 'application/json'},
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        admin: 'y'
+                    })
+                })
+                .then(res => {
+                    if (res.ok) {
+                        window.location.reload();
+                    }
+                    else {
+                        alert(res.statusText);
+                    }
+                })
+                .catch()
+            }
+            else {
+                alert(res.statusText);
+                return false;
+            }
+        })
+        .catch()
+    }
+}
+
+// ability to revoke admin privileges from other users
+const revokeAdminBtn = document.getElementById('revoke-admin');
+revokeAdminBtn.addEventListener('click', revokeAdmin);
+
+function revokeAdmin() {
+    const email = document.getElementById('get-email').value;
+    const password = document.getElementById('get-password').value;
+
+    if (validateLoginDetails(email, password)) {
+        fetch('/users/login', {
+            method: 'POST',
+            headers: {'Content-type': 'application/json'},
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        })
+        .then(res => {
+            if (res.ok) {
+                fetch('/users/admin', {
+                    method: 'POST',
+                    headers: {'Content-type': 'application/json'},
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        admin: 'n'
+                    })
+                })
+                .then(res => {
+                    if (res.ok) {
+                        window.location.reload();
+                    }
+                    else {
+                        alert(res.statusText);
+                    }
+                })
+                .catch()
+            }
+            else {
+                alert(res.statusText);
+                return false;
+            }
+        })
+        .catch()
+    }
+}
+
+//Ability to mark a review as hidden 
+const hideReviewBtn = document.getElementById('hide-review');
+hideReviewBtn.addEventListener('click', hideReview);
+
+function hideReview() {
+    const reviewId = document.getElementById('get-review-id').value;
+
+    if (reviewId == '' || reviewId == null) {
+        alert('Review ID is required');
+        return false;
+    }
+
+    fetch('/reviews/hide', {
+        method: 'POST',
+        headers: {'Content-type': 'application/json'},
+        body: JSON.stringify({
+            reviewId: reviewId
+        })
+    })
+    .then(res => {
+        if (res.ok) {
+            window.location.reload();
+        }
+        else {
+            alert(res.statusText);
+        }
+    })
+    .catch()
+}
+//mark a review as unhidden
+const unhideReviewBtn = document.getElementById('unhide-review');
+unhideReviewBtn.addEventListener('click', unhideReview);
+
+function unhideReview() {
+    const reviewId = document.getElementById('get-review-id').value;
+
+    if (reviewId == '' || reviewId == null) {
+        alert('Review ID is required');
+        return false;
+    }
+
+    fetch('/reviews/unhide', {
+        method: 'POST',
+        headers: {'Content-type': 'application/json'},
+        body: JSON.stringify({
+            reviewId: reviewId
+        })
+    })
+    .then(res => {
+        if (res.ok) {
+            window.location.reload();
+        }
+        else {
+            alert(res.statusText);
+        }
+    })
+    .catch()
+}
+//ability to mark a user as banned
+const banUserBtn = document.getElementById('ban-user');
+banUserBtn.addEventListener('click', banUser);
+
+function banUser() {
+    const email = document.getElementById('get-email').value;
+    const password = document.getElementById('get-password').value;
+
+    if (validateLoginDetails(email, password)) {
+        fetch('/users/login', {
+            method: 'POST',
+            headers: {'Content-type': 'application/json'},
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        })
+        .then(res => {
+            if (res.ok) {
+                fetch('/users/ban', {
+                    method: 'POST',
+                    headers: {'Content-type': 'application/json'},
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        banned: 'y'
+                    })
+                })
+                .then(res => {
+                    if (res.ok) {
+                        window.location.reload();
+                    }
+                    else {
+                        alert(res.statusText);
+                    }
+                })
+                .catch()
+            }
+            else {
+                alert(res.statusText);
+                return false;
+            }
+        })
+        .catch()
+    }
+}
+//ability to mark a user as unbanned
+const unbanUserBtn = document.getElementById('unban-user');
+unbanUserBtn.addEventListener('click', unbanUser);
+
+function unbanUser() {
+    const email = document.getElementById('get-email').value;
+    const password = document.getElementById('get-password').value;
+
+    if (validateLoginDetails(email, password)) {
+        fetch('/users/login', {
+            method: 'POST',
+            headers: {'Content-type': 'application/json'},
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        })
+        .then(res => {
+            if (res.ok) {
+                fetch('/users/ban', {
+                    method: 'POST',
+                    headers: {'Content-type': 'application/json'},
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                        banned: 'n'
+                    })
+                })
+                .then(res => {
+                    if (res.ok) {
+                        window.location.reload();
+                    }
+                    else {
+                        alert(res.statusText);
+                    }
+                })
+                .catch()
+            }
+            else {
+                alert(res.statusText);
+                return false;
+            }
+        })
+        .catch()
+    }
+}
+
+
+
+
+
+
