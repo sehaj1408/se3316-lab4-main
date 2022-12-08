@@ -287,7 +287,66 @@ fs.createReadStream('lab4-data/raw_tracks.csv')
                 }
 
                 res.send(resultArr); //Send result array as JSON
-            })        
+            })       
+            app.get('/api/tracks/:track', (req, res) => { //Get tracks
+                const track = req.params.track;
+
+                if (raw_tracks_data.find(t => t.track_id == parseInt(track))) {
+                    res.status(200).send();
+                }
+                else {
+                    res.statusMessage = 'The track with that id does not exist';
+                    res.status(400).send();
+                }
+            })
+
+            app.get('/api/open/publicLists', (req, res) => { //Get public lists
+                get(child(dbRef, 'lists/')).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const listArr = [];
+                        let trackList = {};
+                        let count = 0;
+                        snapshot.forEach(list => {
+                            const track = list.child('tracks').val();
+                            const flag = list.child('flag').val();
+                            let rating = list.child('review').child('rating').val();
+                            const dateModified = list.child('dateModified').val();
+                            const description = list.child('description').val();
+                            const tracks = list.child('tracks').val();
+
+                            if (rating == '' || rating == null) {
+                                rating = 'no rating';
+                            }
+
+                            const row = raw_tracks_data.find(t => t.track_id == parseInt(track));
+                            if (flag == 'public') {
+                                trackList = {
+                                    name: list.child('name').val(),
+                                    numOfTracks: list.child('tracks').val(),
+                                    playTime: row.track_duration,
+                                    averageRating: rating,
+                                    dateModified: dateModified,
+                                    description: description,
+                                    tracks: tracks
+                                }
+                                listArr.push(trackList);
+                            }
+                        })
+                        if (listArr.length == 0) { //If no list length does not exist
+                            res.statusMessage = 'No public playlists exist';
+                            res.status(400).send();
+                        }
+                        else {
+                            const sorted = listArr.sort((a, b) => b.dateModified - a.dateModified);
+                            res.send(sorted);
+                        }
+                    }
+                    else {
+                        res.statusMessage = 'No lists exist';
+                        res.status(400).send();
+                    }
+                })
+            })
         })
 //ADMIN FUNCTIONS
 //Set a user as admin
