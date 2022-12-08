@@ -63,6 +63,99 @@ function validateLoginDetails(email, password) {
     }
     return true;
 }
+const searchBtn = document.getElementById('search-tracks-button');
+if (searchBtn) {
+    searchBtn.addEventListener('click', searchTracks);
+}
+
+function searchTracks() {
+    const artistName = document.getElementById('get-artist-name').value.toLowerCase();
+    const bandName = document.getElementById('get-band-name').value.toLowerCase();
+    const genreName = document.getElementById('get-genre-name').value.toLowerCase();
+    const trackTitle = document.getElementById('get-track-title').value.toLowerCase();
+
+    if (validateTrackSearchInput(artistName, bandName, genreName, trackTitle)) {
+        const list = document.getElementById('get-track-search');
+        if (list.childElementCount > 0) {
+            let first = list.firstElementChild;
+            while (first) {
+                first.remove();
+                first = list.lastElementChild;
+            }
+        }
+
+        fetch('/api/open/search/track', {
+            method: 'POST',
+            headers: {'Content-type': 'application/json'},
+            body: JSON.stringify({
+                artistName: artistName,
+                bandName: bandName,
+                genreName: genreName,
+                trackTitle: trackTitle
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.length == 0) {
+                alert('No results were found matching the search input');
+                return false;
+            }
+            else {
+                data.forEach(row => {
+                    const item = document.createElement('li');
+                    const childItem = document.createElement('label');
+                    childItem.appendChild(document.createTextNode(`
+                    track_title: ${row['track_title']},
+                    artist_name: ${row['artist_name']}
+                    `))
+
+                    const youtubeBtn = document.createElement('button');
+                    youtubeBtn.textContent = 'Play on YouTube';
+                    item.appendChild(childItem);
+                    const br = document.createElement('br');
+                    item.appendChild(youtubeBtn);
+                    list.appendChild(item);
+
+                    youtubeBtn.addEventListener('click', openYoutube);
+
+                    function openYoutube() {
+                        window.open(`https://www.youtube.com/results?search_query=${row['track_title']}+${row['artist_name']}`, '_blank').focus();
+                    }
+
+                    childItem.addEventListener('click', viewTrackInfo);
+
+                    const infoDiv = document.createElement('div');
+                    function viewTrackInfo() {
+                        const infoLabel = document.createElement('h5');
+
+                        infoLabel.appendChild(document.createTextNode(`
+                            track_duration: ${row['track_duration']},
+                            track_date_recorded: ${row['track_date_recorded']}
+                        `));
+
+                        if (infoDiv.childElementCount > 0) {
+                            let first = infoDiv.firstElementChild;
+                            while (first) {
+                                first.remove();
+                                first = infoDiv.lastElementChild;
+                            }
+                        }
+
+                        infoDiv.appendChild(infoLabel);
+                        item.appendChild(infoDiv);
+                    }
+                })
+            }
+        })
+        .catch((error) => {
+            console.log(error);
+        })
+    }
+    else {
+        alert('Please fill out a search field');
+        return false;
+    }
+}
 
 const showCreateBtn = document.getElementById('show-create-button');
 if (showCreateBtn) {
