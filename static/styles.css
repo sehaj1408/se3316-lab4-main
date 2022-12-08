@@ -1,37 +1,19 @@
-input {
-    display: block;
-    width: 25%;
+#get-tracks-searchBar {
+    width: 20%;
 }
 
-label {
-    text-align: right;
-    clear: both;
-    float:left;
-    margin-right:15px;
+#listName {
+    width: 15%;
 }
 
-#show-list-container {
-    margin-top: 20px;
-} 
-input{
-    width: 100%;
-    padding: 12px 21px;
-    margin: 8px 0;
-    display: inline-block;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
+#listTracks {
+    width: 20%;
 }
-button{
-    background-color: #888CAF50;
-    color: black;
-    padding: 12px 21px;
-    margin: 8px 0;
-    width: 100%;
+
+#trackNumber {
+    width: 15%;
 }
-body{
-    text-align: center;
-    background-color: #f2f2f2;
-}
-h1{
-    text-align: center;
+
+#trackListName {
+    width: 15%;
 }
