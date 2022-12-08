@@ -1,7 +1,7 @@
 import express, { raw } from 'express';
 const app = express();
 const port = 3000;
-import fs from 'fs';
+import fs, { copyFileSync } from 'fs';
 import csv from 'csv-parser';
 
 import bodyParser from 'body-parser';
@@ -221,10 +221,10 @@ fs.createReadStream('lab4-data/raw_tracks.csv')
             raw_tracks_data = raw_tracks_data.slice(0, 10000);
 
             app.post('/api/open/search/track', (req, res) => { //Search through the tracks.csv file with the given conditions: artist name, band name, track name, and title
-                const artistName = req.body.artistName;
-                const bandName = req.body.bandName;
-                const genreName = req.body.genreName;
-                const trackTitle = req.body.trackTitle;
+                const artistName = req.body.artistName.replace('/\s/g', '');
+                const bandName = req.body.bandName.replace('/\s/g', '');
+                const genreName = req.body.genreName.replace('/\s/g', '');
+                const trackTitle = req.body.trackTitle.replace('/\s/g', '');
 
                 let result = {};
                 let resultArr = [];
@@ -235,7 +235,7 @@ fs.createReadStream('lab4-data/raw_tracks.csv')
                 while (count < raw_tracks_data.length) {
                     val = true;
                     if ( (val) && (!(artistName == '' || artistName == null)) ) {
-                        if (raw_tracks_data[count].artist_name.toLowerCase().indexOf(artistName) > -1) {
+                        if (raw_tracks_data[count].artist_name.toLowerCase().replace('/\s/g', '').indexOf(artistName) > -1) {
                             result = {
                                 'track_title': raw_tracks_data[count].track_title,
                                 'artist_name': raw_tracks_data[count].artist_name,
@@ -247,7 +247,7 @@ fs.createReadStream('lab4-data/raw_tracks.csv')
                         }
                     }
                     if ( (val) && (!(bandName == '' || bandName == null)) ) {
-                        if (raw_tracks_data[count].artist_name.toLowerCase().indexOf(bandName) > -1) {
+                        if (raw_tracks_data[count].artist_name.toLowerCase().replace('/\s/g', '').indexOf(bandName) > -1) {
                             result = {
                                 'track_title': raw_tracks_data[count].track_title,
                                 'artist_name': raw_tracks_data[count].artist_name,
@@ -259,7 +259,7 @@ fs.createReadStream('lab4-data/raw_tracks.csv')
                         }
                     }
                     if ( (val) && (!(genreName == '' || genreName == null)) ) {
-                        if (raw_tracks_data[count].track_title.toLowerCase().indexOf(genreName) > -1) {
+                        if (raw_tracks_data[count].track_title.toLowerCase().replace('/\s/g', '').indexOf(genreName) > -1) {
                             result = {
                                 'track_title': raw_tracks_data[count].track_title,
                                 'artist_name': raw_tracks_data[count].artist_name,
@@ -271,7 +271,7 @@ fs.createReadStream('lab4-data/raw_tracks.csv')
                         }
                     }
                     if ( (val) && (!(trackTitle == '' || trackTitle == null)) ) {
-                        if (raw_tracks_data[count].track_title.toLowerCase().indexOf(trackTitle) > -1) {
+                        if (raw_tracks_data[count].track_title.toLowerCase().replace('/\s/g', '').indexOf(trackTitle) > -1) {
                             result = {
                                 'track_title': raw_tracks_data[count].track_title,
                                 'artist_name': raw_tracks_data[count].artist_name,
@@ -320,14 +320,15 @@ fs.createReadStream('lab4-data/raw_tracks.csv')
 
                             const row = raw_tracks_data.find(t => t.track_id == parseInt(track));
                             if (flag == 'public') {
+                                // include datemodified
                                 trackList = {
                                     name: list.child('name').val(),
                                     numOfTracks: list.child('tracks').val(),
                                     playTime: row.track_duration,
                                     averageRating: rating,
-                                    dateModified: dateModified,
+                                    dateModified, dateModified,
                                     description: description,
-                                    tracks: tracks
+                                    tracks: tracks,
                                 }
                                 listArr.push(trackList);
                             }
@@ -338,7 +339,7 @@ fs.createReadStream('lab4-data/raw_tracks.csv')
                         }
                         else {
                             const sorted = listArr.sort((a, b) => b.dateModified - a.dateModified);
-                            res.send(sorted);
+                            res.send(listArr);
                         }
                     }
                     else {
@@ -348,6 +349,160 @@ fs.createReadStream('lab4-data/raw_tracks.csv')
                 })
             })
         })
+        
+app.get('/api/secure/allLists', (req, res) => {
+    get(child(dbRef, 'lists/')).then((snapshot) => {
+        let listArr = [];
+        if (snapshot.exists()) {
+            snapshot.forEach(child => {
+                listArr.push(child.val());
+            })
+        }
+        res.send(listArr);
+    })
+})
+
+app.post('/api/secure/list/review', (req, res) => {
+    const rating = req.body.rating;
+    const comment = req.body.comment;
+    const listName = req.body.name;
+    const creationDate = req.body.creationDate;
+
+    const setRef = ref(db, 'lists/' + listName + '/review/');
+
+    const list = {
+        rating: rating,
+        comment: comment,
+        creationDate: creationDate
+    }
+    set(setRef, list);
+
+    res.send(list);
+})
+
+app.delete('/api/secure/delete/:name', (req, res) => {
+    const name = req.params.name;
+
+    let errorExists = true;
+    get(child(dbRef, 'lists/')).then((snapshot) => {
+        if (snapshot.exists()) {
+            const setRef = ref(db, 'lists/' + name);
+            snapshot.forEach(child => {
+                if (name == child.key) {
+                    set(setRef, {});
+                    res.send(child.key);
+                    errorExists = false;
+                }
+            })
+        }
+
+        if (errorExists) {
+            res.statusMessage = 'error in delete call /api/secure/delete/:name';
+            res.status(400).send();
+        }
+    })
+})
+
+app.put('/api/secure/edit', (req, res) => {
+    const currentName = req.body.replaceName;
+    const name = req.body.name;
+    const description = req.body.description;
+    const track = req.body.track;
+    const flag = req.body.flag;
+
+    get(child(dbRef, 'lists/')).then((snapshot) => {
+        if (snapshot.exists()) {
+            const setRef = ref(db, 'lists/' + currentName);
+            const newRef = ref(db, 'lists/' + name);
+            snapshot.forEach(child => {
+                if (currentName == child.key) {
+                    set(setRef, {});
+                    const list = {
+                        name: name, 
+                        description: description,
+                        tracks: track,
+                        flag: flag
+                    };
+                    set(newRef, list);
+
+                    res.send(list);
+                }
+            })
+        }
+    })
+})
+
+app.post('/api/secure/list', (req, res) => {
+    const reqName = req.body.name;
+    const reqDescription = req.body.description;
+    const reqTracks = req.body.tracks;
+    let reqFlag = req.body.flag; 
+    const dateModified = req.body.dateModified;
+
+    let errorExists = false;
+    let errorMessage = ' ';
+
+    const setRef = ref(db, 'lists/' + reqName);
+
+    // include datemodified at end
+    const list = {
+        name: reqName,
+        description: reqDescription,
+        tracks: reqTracks,
+        flag: reqFlag,
+        dateModified: dateModified
+    }; 
+
+    get(child(dbRef, 'lists/')).then((snapshot) => {
+        if (snapshot.exists()) {
+            const limit = 20;
+            if (snapshot.size > (limit-1)) {
+                errorExists = true;
+                errorMessage = 'You can only create up to 20 playlists';
+            }
+
+            else if(snapshot.forEach(child => {
+                if (reqName == child.key) { 
+                    errorExists = true;
+                    errorMessage = `The list with the name '${reqName}' already exists`;
+                }
+            })) {
+            }
+
+            else {
+                // include datemodified at end
+                set(setRef, {
+                    name: reqName, 
+                    description: reqDescription,
+                    tracks: reqTracks,
+                    flag: reqFlag,
+                    dateModified: dateModified
+                })
+            }
+        }
+        else {
+            // include datemodified at end
+            set(setRef, {
+                name: reqName, 
+                description: reqDescription,
+                tracks: reqTracks,
+                flag: reqFlag,
+                dateModified: dateModified
+            })
+        }
+
+        if (errorExists) {
+            res.statusMessage = errorMessage;
+            res.status(400).send();
+        }
+        else {
+            res.send(list);
+        }
+    }).catch((error) => {
+        console.log(error);
+    })
+}); 
+    
 //ADMIN FUNCTIONS
 //Set a user as admin
 app.post('/users/admin', (req, res) => {
