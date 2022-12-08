@@ -156,6 +156,61 @@ function searchTracks() {
         return false;
     }
 }
+const publicLists = document.getElementsByTagName('public-playlists');
+fetch('/api/open/publicLists')
+.then(res => res.json())
+.then(data => {
+    let count = 0;
+    data.forEach(list => {
+        if (count < 10) {
+            const ol = document.getElementById('public-playlists-list');
+            const childItem = document.createElement('label');
+            childItem.appendChild(document.createTextNode(`
+                name: ${list['name']},
+                numOfTracks: ${list['numOfTracks']},
+                playTime: ${list['playTime']},
+                averageRating: ${list['averageRating']}
+            `))
+            const br = document.createElement('br');
+            ol.appendChild(childItem);
+            ol.appendChild(br);
+
+            childItem.addEventListener('click', expandPublicList);
+
+            const h5Div = document.createElement('div');
+            function expandPublicList() {
+                const h5 = document.createElement('h5');
+                if (h5Div.childElementCount > 0) {
+                    let first = h5Div.firstElementChild;
+                    while (first) {
+                        first.remove();
+                        first = h5Div.lastElementChild;
+                    }
+                }
+                const trackLabel = document.createElement('label');
+                trackLabel.textContent = `${list['tracks']}`;
+
+                h5.appendChild(document.createTextNode(`
+                    description: ${list['description']},
+                    tracks: ${trackLabel.textContent}
+                `))
+
+                trackLabel.addEventListener('click', showTrackInfo);
+
+                function showTrackInfo() {
+                    console.log('whats good');
+                }
+                
+                const okBtn = document.createElement('button');
+                okBtn.textContent = 'OK';
+                h5Div.appendChild(h5);
+                childItem.appendChild(h5Div);
+
+            }
+        }
+        count += 1;
+    })
+})
 
 const showCreateBtn = document.getElementById('show-create-button');
 if (showCreateBtn) {
