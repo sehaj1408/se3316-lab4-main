@@ -168,6 +168,18 @@ function checkLogin() {
                 const deactivateBtn = document.createElement('button');
                 deactivateBtn.textContent = 'Deactive account';
 
+                const grantAdminBtn = document.createElement('button');
+                grantAdminBtn.textContent = 'Grant admin';
+
+                const revokeAdminBtn = document.createElement('button');
+                revokeAdminBtn.textContent = 'Revoke admin';
+
+                const banUserBtn = document.createElement('button');
+                banUserBtn.textContent = 'Ban user';
+
+                const unbanUserBtn = document.createElement('button');
+                unbanUserBtn.textContent = 'Unban user';
+
                 const br = document.createElement('br');
 
                 // show logged in message, update and deactivate buttons
