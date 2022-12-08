@@ -211,6 +211,143 @@ app.post('/users/login', async (req, res) => {
         }
     })
 })
+let raw_tracks_data = [];
+fs.createReadStream('lab4-data/raw_tracks.csv')
+    .pipe(csv())
+    .on('data', (rows) => {
+        raw_tracks_data.push(rows);
+    })
+        .on('end', () => {
+            raw_tracks_data = raw_tracks_data.slice(0, 10000);
+
+            app.post('/api/open/search/track', (req, res) => { //Search through the tracks.csv file with the given conditions: artist name, band name, track name, and title
+                const artistName = req.body.artistName;
+                const bandName = req.body.bandName;
+                const genreName = req.body.genreName;
+                const trackTitle = req.body.trackTitle;
+
+                let result = {};
+                let resultArr = [];
+
+                let count = 0;
+                let val = true;
+
+                while (count < raw_tracks_data.length) {
+                    val = true;
+                    if ( (val) && (!(artistName == '' || artistName == null)) ) {
+                        if (raw_tracks_data[count].artist_name.toLowerCase().indexOf(artistName) > -1) {
+                            result = {
+                                'track_title': raw_tracks_data[count].track_title,
+                                'artist_name': raw_tracks_data[count].artist_name,
+                                'track_duration': raw_tracks_data[count].track_duration,
+                                'track_date_recorded': raw_tracks_data[count].track_date_recorded
+                            }
+                            resultArr.push(result);
+                            val = false;
+                        }
+                    }
+                    if ( (val) && (!(bandName == '' || bandName == null)) ) {
+                        if (raw_tracks_data[count].artist_name.toLowerCase().indexOf(bandName) > -1) {
+                            result = {
+                                'track_title': raw_tracks_data[count].track_title,
+                                'artist_name': raw_tracks_data[count].artist_name,
+                                'track_duration': raw_tracks_data[count].track_duration,
+                                'track_date_recorded': raw_tracks_data[count].track_date_recorded
+                            }
+                            resultArr.push(result);
+                            val = false;
+                        }
+                    }
+                    if ( (val) && (!(genreName == '' || genreName == null)) ) {
+                        if (raw_tracks_data[count].track_title.toLowerCase().indexOf(genreName) > -1) {
+                            result = {
+                                'track_title': raw_tracks_data[count].track_title,
+                                'artist_name': raw_tracks_data[count].artist_name,
+                                'track_duration': raw_tracks_data[count].track_duration,
+                                'track_date_recorded': raw_tracks_data[count].track_date_recorded
+                            }
+                            resultArr.push(result);
+                            val = false;
+                        }
+                    }
+                    if ( (val) && (!(trackTitle == '' || trackTitle == null)) ) {
+                        if (raw_tracks_data[count].track_title.toLowerCase().indexOf(trackTitle) > -1) {
+                            result = {
+                                'track_title': raw_tracks_data[count].track_title,
+                                'artist_name': raw_tracks_data[count].artist_name,
+                                'track_duration': raw_tracks_data[count].track_duration,
+                                'track_date_recorded': raw_tracks_data[count].track_date_recorded
+                            }
+                            resultArr.push(result);
+                            val = false;
+                        }
+                    }
+
+                    count += 1;
+                }
+
+                res.send(resultArr); //Send result array as JSON
+            })       
+            app.get('/api/tracks/:track', (req, res) => { //Get tracks
+                const track = req.params.track;
+
+                if (raw_tracks_data.find(t => t.track_id == parseInt(track))) {
+                    res.status(200).send();
+                }
+                else {
+                    res.statusMessage = 'The track with that id does not exist';
+                    res.status(400).send();
+                }
+            })
+
+            app.get('/api/open/publicLists', (req, res) => { //Get public lists
+                get(child(dbRef, 'lists/')).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const listArr = [];
+                        let trackList = {};
+                        let count = 0;
+                        snapshot.forEach(list => {
+                            const track = list.child('tracks').val();
+                            const flag = list.child('flag').val();
+                            let rating = list.child('review').child('rating').val();
+                            const dateModified = list.child('dateModified').val();
+                            const description = list.child('description').val();
+                            const tracks = list.child('tracks').val();
+
+                            if (rating == '' || rating == null) {
+                                rating = 'no rating';
+                            }
+
+                            const row = raw_tracks_data.find(t => t.track_id == parseInt(track));
+                            if (flag == 'public') {
+                                trackList = {
+                                    name: list.child('name').val(),
+                                    numOfTracks: list.child('tracks').val(),
+                                    playTime: row.track_duration,
+                                    averageRating: rating,
+                                    dateModified: dateModified,
+                                    description: description,
+                                    tracks: tracks
+                                }
+                                listArr.push(trackList);
+                            }
+                        })
+                        if (listArr.length == 0) { //If no list length does not exist
+                            res.statusMessage = 'No public playlists exist';
+                            res.status(400).send();
+                        }
+                        else {
+                            const sorted = listArr.sort((a, b) => b.dateModified - a.dateModified);
+                            res.send(sorted);
+                        }
+                    }
+                    else {
+                        res.statusMessage = 'No lists exist';
+                        res.status(400).send();
+                    }
+                })
+            })
+        })
 //ADMIN FUNCTIONS
 //Set a user as admin
 app.post('/users/admin', (req, res) => {
