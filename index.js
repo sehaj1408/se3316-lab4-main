@@ -211,6 +211,84 @@ app.post('/users/login', async (req, res) => {
         }
     })
 })
+let raw_tracks_data = [];
+fs.createReadStream('lab4-data/raw_tracks.csv')
+    .pipe(csv())
+    .on('data', (rows) => {
+        raw_tracks_data.push(rows);
+    })
+        .on('end', () => {
+            raw_tracks_data = raw_tracks_data.slice(0, 10000);
+
+            app.post('/api/open/search/track', (req, res) => { //Search through the tracks.csv file with the given conditions: artist name, band name, track name, and title
+                const artistName = req.body.artistName;
+                const bandName = req.body.bandName;
+                const genreName = req.body.genreName;
+                const trackTitle = req.body.trackTitle;
+
+                let result = {};
+                let resultArr = [];
+
+                let count = 0;
+                let val = true;
+
+                while (count < raw_tracks_data.length) {
+                    val = true;
+                    if ( (val) && (!(artistName == '' || artistName == null)) ) {
+                        if (raw_tracks_data[count].artist_name.toLowerCase().indexOf(artistName) > -1) {
+                            result = {
+                                'track_title': raw_tracks_data[count].track_title,
+                                'artist_name': raw_tracks_data[count].artist_name,
+                                'track_duration': raw_tracks_data[count].track_duration,
+                                'track_date_recorded': raw_tracks_data[count].track_date_recorded
+                            }
+                            resultArr.push(result);
+                            val = false;
+                        }
+                    }
+                    if ( (val) && (!(bandName == '' || bandName == null)) ) {
+                        if (raw_tracks_data[count].artist_name.toLowerCase().indexOf(bandName) > -1) {
+                            result = {
+                                'track_title': raw_tracks_data[count].track_title,
+                                'artist_name': raw_tracks_data[count].artist_name,
+                                'track_duration': raw_tracks_data[count].track_duration,
+                                'track_date_recorded': raw_tracks_data[count].track_date_recorded
+                            }
+                            resultArr.push(result);
+                            val = false;
+                        }
+                    }
+                    if ( (val) && (!(genreName == '' || genreName == null)) ) {
+                        if (raw_tracks_data[count].track_title.toLowerCase().indexOf(genreName) > -1) {
+                            result = {
+                                'track_title': raw_tracks_data[count].track_title,
+                                'artist_name': raw_tracks_data[count].artist_name,
+                                'track_duration': raw_tracks_data[count].track_duration,
+                                'track_date_recorded': raw_tracks_data[count].track_date_recorded
+                            }
+                            resultArr.push(result);
+                            val = false;
+                        }
+                    }
+                    if ( (val) && (!(trackTitle == '' || trackTitle == null)) ) {
+                        if (raw_tracks_data[count].track_title.toLowerCase().indexOf(trackTitle) > -1) {
+                            result = {
+                                'track_title': raw_tracks_data[count].track_title,
+                                'artist_name': raw_tracks_data[count].artist_name,
+                                'track_duration': raw_tracks_data[count].track_duration,
+                                'track_date_recorded': raw_tracks_data[count].track_date_recorded
+                            }
+                            resultArr.push(result);
+                            val = false;
+                        }
+                    }
+
+                    count += 1;
+                }
+
+                res.send(resultArr); //Send result array as JSON
+            })        
+        })
 //ADMIN FUNCTIONS
 //Set a user as admin
 app.post('/users/admin', (req, res) => {
